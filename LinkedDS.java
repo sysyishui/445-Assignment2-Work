@@ -214,7 +214,7 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
             currentNode = currentNode.next;
         }
 
-        return result;  // Return the sliced linked list
+        return result;
     }
 
     @Override
@@ -289,32 +289,43 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
             tempList.append(itemAt(oldPositions[i]));
         }
 
-        // Reorder the elements according to newPositions
-        LinkedDS<T> shuffledList = new LinkedDS<>();
+        // Validate newPositions and reinsert elements in the newPositions order
         for (int i = 0; i < newPositions.length; i++) {
-            shuffledList.insert(tempList.itemAt(i), newPositions[i]);
+            if (newPositions[i] < 0 || newPositions[i] > numberOfEntries) {
+                throw new IndexOutOfBoundsException("Invalid index for shuffle.");
+            }
+            insert(tempList.itemAt(i), newPositions[i]);
         }
-
-        firstNode = shuffledList.firstNode;  // Update the linked list with shuffled elements
     }
 
     @Override
     public T predecessor(T entry) {
+        if (isEmpty()) {
+            return null;
+        }
+
         Node currentNode = firstNode;
+        Node lastNode = null;
         T predecessor = null;
 
         // Traverse the list to find the predecessor
-        while (currentNode != null && !currentNode.data.equals(entry)) {
+        while (currentNode != null) {
+            if (currentNode.data.equals(entry)) {
+                if (predecessor == null) {
+                    // Return the last node if entry is the first node
+                    lastNode = firstNode;
+                    while (lastNode.next != null) {
+                        lastNode = lastNode.next;
+                    }
+                    return lastNode.data;
+                }
+                return predecessor;
+            }
             predecessor = currentNode.data;
             currentNode = currentNode.next;
         }
 
-        // If the entry is the first item, return null
-        if (currentNode == firstNode) {
-            return null;
-        }
-
-        return predecessor;
+        return null;  // Return null if the entry is not found
     }
 
     @Override
