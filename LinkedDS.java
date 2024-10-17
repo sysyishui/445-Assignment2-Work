@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterface<T>, ReorderInterface, Comparable<LinkedDS<T>> {
 
     private Node firstNode;  // Reference to the first node
@@ -282,38 +284,41 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
     }
 
     @Override
-    public void shuffle(int[] oldPositions, int[] newPositions) {
-        if (oldPositions.length != newPositions.length) {
-            throw new IllegalArgumentException("Mismatched positions array sizes.");
-        }
-
-        LinkedDS<T> tempList = new LinkedDS<>();
-        for (int i = 0; i < oldPositions.length; i++) {
-            tempList.append(itemAt(oldPositions[i]));
-        }
-
-        // Create an array to store the nodes temporarily
-        Node[] tempNodes = new Node[numberOfEntries];
-        Node currentNode = firstNode;
-        for (int i = 0; i < numberOfEntries; i++) {
-            tempNodes[i] = currentNode;
-            currentNode = currentNode.next;
-        }
-
-        // Reorder the elements according to newPositions
-        for (int i = 0; i < newPositions.length; i++) {
-            tempNodes[newPositions[i]].data = tempList.itemAt(i);
-        }
-
-        // Restore the reordered list
-        firstNode = tempNodes[0];
-        Node lastNode = firstNode;
-        for (int i = 1; i < tempNodes.length; i++) {
-            lastNode.next = tempNodes[i];
-            lastNode = lastNode.next;
-        }
-        lastNode.next = null;
+public void shuffle(int[] oldPositions, int[] newPositions) {
+    if (oldPositions.length != newPositions.length) {
+        throw new IllegalArgumentException("Mismatched positions array sizes.");
     }
+
+    LinkedDS<T> tempList = new LinkedDS<>();
+    for (int i = 0; i < oldPositions.length; i++) {
+        tempList.append(itemAt(oldPositions[i]));
+    }
+
+    // Use ArrayList instead of an array
+    ArrayList<Node> tempNodes = new ArrayList<>(numberOfEntries);
+    Node currentNode = firstNode;
+    
+    // Populate the ArrayList with nodes
+    for (int i = 0; i < numberOfEntries; i++) {
+        tempNodes.add(currentNode);
+        currentNode = currentNode.next;
+    }
+
+    // Reorder the elements according to newPositions
+    for (int i = 0; i < newPositions.length; i++) {
+        tempNodes.get(newPositions[i]).data = tempList.itemAt(i);
+    }
+
+    // Restore the reordered list
+    firstNode = tempNodes.get(0);
+    Node lastNode = firstNode;
+    for (int i = 1; i < tempNodes.size(); i++) {
+        lastNode.next = tempNodes.get(i);
+        lastNode = lastNode.next;
+    }
+    lastNode.next = null;
+}
+
 
     @Override
     public T predecessor(T entry) {
