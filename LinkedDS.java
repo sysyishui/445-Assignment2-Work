@@ -178,17 +178,18 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
         }
 
         // Remove nodes from index1 to index2
-        Node endNode = currentNode;
-        for (int i = index1; i <= index2 && endNode != null; i++) {
-            endNode = endNode.next;
-            numberOfEntries--;
+        for (int i = index1; i <= index2; i++) {
+            if (currentNode != null) {
+                currentNode = currentNode.next;
+                numberOfEntries--;
+            }
         }
 
         // Link previous node to the node after the cut range
         if (prevNode != null) {
-            prevNode.next = endNode;
+            prevNode.next = currentNode;
         } else {
-            firstNode = endNode;  // If starting from the head, update the head
+            firstNode = currentNode;  // If starting from the head, update the head
         }
 
         return true;
@@ -209,12 +210,14 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
         }
 
         // Add nodes from index1 to index2 to the result
-        for (int i = index1; i <= index2 && currentNode != null; i++) {
-            result.append(currentNode.data);
-            currentNode = currentNode.next;
+        for (int i = index1; i <= index2; i++) {
+            if (currentNode != null) {
+                result.append(currentNode.data);
+                currentNode = currentNode.next;
+            }
         }
 
-        return result;
+        return result; // Return the sliced linked list
     }
 
     @Override
@@ -223,7 +226,7 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
         Node currentNode = firstNode;
 
         while (currentNode != null) {
-            if (currentNode.data.compareTo(entry) <= 0) {
+            if (currentNode.data.equals(entry)) {
                 result.append(currentNode.data);
             }
             currentNode = currentNode.next;
@@ -289,13 +292,27 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
             tempList.append(itemAt(oldPositions[i]));
         }
 
-        // Validate newPositions and reinsert elements in the newPositions order
-        for (int i = 0; i < newPositions.length; i++) {
-            if (newPositions[i] < 0 || newPositions[i] > numberOfEntries) {
-                throw new IndexOutOfBoundsException("Invalid index for shuffle.");
-            }
-            insert(tempList.itemAt(i), newPositions[i]);
+        // Create an array to store the nodes temporarily
+        Node[] tempNodes = new Node[numberOfEntries];
+        Node currentNode = firstNode;
+        for (int i = 0; i < numberOfEntries; i++) {
+            tempNodes[i] = currentNode;
+            currentNode = currentNode.next;
         }
+
+        // Reorder the elements according to newPositions
+        for (int i = 0; i < newPositions.length; i++) {
+            tempNodes[newPositions[i]].data = tempList.itemAt(i);
+        }
+
+        // Restore the reordered list
+        firstNode = tempNodes[0];
+        Node lastNode = firstNode;
+        for (int i = 1; i < tempNodes.length; i++) {
+            lastNode.next = tempNodes[i];
+            lastNode = lastNode.next;
+        }
+        lastNode.next = null;
     }
 
     @Override
@@ -305,27 +322,20 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
         }
 
         Node currentNode = firstNode;
-        Node lastNode = null;
-        T predecessor = null;
+        Node prevNode = null;
 
-        // Traverse the list to find the predecessor
         while (currentNode != null) {
             if (currentNode.data.equals(entry)) {
-                if (predecessor == null) {
-                    // Return the last node if entry is the first node
-                    lastNode = firstNode;
-                    while (lastNode.next != null) {
-                        lastNode = lastNode.next;
-                    }
-                    return lastNode.data;
+                if (prevNode == null) {
+                    return last(); // Wrap around if the first node is the entry
+                } else {
+                    return prevNode.data; // Return the predecessor
                 }
-                return predecessor;
             }
-            predecessor = currentNode.data;
+            prevNode = currentNode;
             currentNode = currentNode.next;
         }
-
-        return null;  // Return null if the entry is not found
+        return null; // If entry is not found
     }
 
     @Override
