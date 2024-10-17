@@ -178,18 +178,17 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
         }
 
         // Remove nodes from index1 to index2
-        for (int i = index1; i <= index2; i++) {
-            if (currentNode != null) {
-                currentNode = currentNode.next;
-                numberOfEntries--;
-            }
+        Node endNode = currentNode;
+        for (int i = index1; i <= index2 && endNode != null; i++) {
+            endNode = endNode.next;
+            numberOfEntries--;
         }
 
         // Link previous node to the node after the cut range
         if (prevNode != null) {
-            prevNode.next = currentNode;
+            prevNode.next = endNode;
         } else {
-            firstNode = currentNode;  // If starting from the head, update the head
+            firstNode = endNode;  // If starting from the head, update the head
         }
 
         return true;
@@ -210,14 +209,12 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
         }
 
         // Add nodes from index1 to index2 to the result
-        for (int i = index1; i <= index2; i++) {
-            if (currentNode != null) {
-                result.append(currentNode.data);
-                currentNode = currentNode.next;
-            }
+        for (int i = index1; i <= index2 && currentNode != null; i++) {
+            result.append(currentNode.data);
+            currentNode = currentNode.next;
         }
 
-        return result; // Return the sliced linked list
+        return result;  // Return the sliced linked list
     }
 
     @Override
@@ -226,7 +223,7 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
         Node currentNode = firstNode;
 
         while (currentNode != null) {
-            if (currentNode.data.equals(entry)) {
+            if (currentNode.data.compareTo(entry) <= 0) {
                 result.append(currentNode.data);
             }
             currentNode = currentNode.next;
@@ -293,10 +290,12 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
         }
 
         // Reorder the elements according to newPositions
-        Node currentNode = firstNode;
+        LinkedDS<T> shuffledList = new LinkedDS<>();
         for (int i = 0; i < newPositions.length; i++) {
-            insert(tempList.itemAt(i), newPositions[i]);
+            shuffledList.insert(tempList.itemAt(i), newPositions[i]);
         }
+
+        firstNode = shuffledList.firstNode;  // Update the linked list with shuffled elements
     }
 
     @Override
@@ -304,15 +303,17 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
         Node currentNode = firstNode;
         T predecessor = null;
 
+        // Traverse the list to find the predecessor
         while (currentNode != null && !currentNode.data.equals(entry)) {
             predecessor = currentNode.data;
             currentNode = currentNode.next;
         }
 
-        // If the entry is the first item, return the last item (wrap-around behavior)
+        // If the entry is the first item, return null
         if (currentNode == firstNode) {
-            return last();
+            return null;
         }
+
         return predecessor;
     }
 
