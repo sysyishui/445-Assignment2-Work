@@ -113,35 +113,34 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
 
     @Override
     public T deleteHead() {
-        if (!isEmpty()) {
-            T data = firstNode.data;
-            firstNode = firstNode.next;
-            numberOfEntries--;
-            return data;
+        if (isEmpty()) {
+            throw new EmptySequenceException("Cannot delete from an empty sequence.");
         }
-        return null;
+        T data = firstNode.data;
+        firstNode = firstNode.next;
+        numberOfEntries--;
+        return data;
     }
 
     @Override
     public T deleteTail() {
-        if (!isEmpty()) {
-            if (numberOfEntries == 1) {
-                T data = firstNode.data;
-                firstNode = null;
-                numberOfEntries--;
-                return data;
-            } else {
-                Node currentNode = firstNode;
-                while (currentNode.next.next != null) {
-                    currentNode = currentNode.next;
-                }
-                T data = currentNode.next.data;
-                currentNode.next = null;
-                numberOfEntries--;
-                return data;
-            }
+        if (isEmpty()) {
+            throw new EmptySequenceException("Cannot delete from an empty sequence.");
         }
-        return null;
+        if (numberOfEntries == 1) {
+            T data = firstNode.data;
+            firstNode = null;
+            numberOfEntries--;
+            return data;
+        }
+        Node currentNode = firstNode;
+        while (currentNode.next.next != null) {
+            currentNode = currentNode.next;
+        }
+        T data = currentNode.next.data;
+        currentNode.next = null;
+        numberOfEntries--;
+        return data;
     }
 
     @Override
@@ -164,75 +163,75 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
     }
 
     @Override
-public boolean cut(int index1, int index2) {
-    if (index1 < 0 || index2 >= numberOfEntries || index1 > index2) {
-        return false; // If the indices are invalid, return false
-    }
-
-    Node currentNode = firstNode;
-    Node prevNode = null;
-    
-    // Traverse to the first index
-    for (int i = 0; i < index1; i++) {
-        prevNode = currentNode;
-        currentNode = currentNode.next;
-    }
-
-    // Remove nodes from index1 to index2
-    for (int i = index1; i <= index2; i++) {
-        if (currentNode != null) {
-            currentNode = currentNode.next;
-            numberOfEntries--;
+    public boolean cut(int index1, int index2) {
+        if (index1 < 0 || index2 >= numberOfEntries || index1 > index2) {
+            return false;
         }
+
+        Node currentNode = firstNode;
+        Node prevNode = null;
+
+        // Traverse to the first index
+        for (int i = 0; i < index1; i++) {
+            prevNode = currentNode;
+            currentNode = currentNode.next;
+        }
+
+        // Remove nodes from index1 to index2
+        for (int i = index1; i <= index2; i++) {
+            if (currentNode != null) {
+                currentNode = currentNode.next;
+                numberOfEntries--;
+            }
+        }
+
+        // Link previous node to the node after the cut range
+        if (prevNode != null) {
+            prevNode.next = currentNode;
+        } else {
+            firstNode = currentNode;  // If starting from the head, update the head
+        }
+
+        return true;
     }
-
-    // Link previous node to the node after the cut range
-    if (prevNode != null) {
-        prevNode.next = currentNode;
-    } else {
-        firstNode = currentNode;  // If starting from the head, update the head
-    }
-
-    return true; // Return true to indicate a successful operation
-}
-
 
     @Override
-public LinkedDS<T> slice(int index1, int index2) {
-    if (index1 < 0 || index2 >= numberOfEntries || index1 > index2) {
-        throw new IndexOutOfBoundsException("Invalid indices for slicing.");
-    }
+    public LinkedDS<T> slice(int index1, int index2) {
+        if (index1 < 0 || index2 >= numberOfEntries || index1 > index2) {
+            throw new IndexOutOfBoundsException("Invalid indices for slicing.");
+        }
 
-    LinkedDS<T> result = new LinkedDS<>();
-    Node currentNode = firstNode;
-    
-    // Traverse to index1
-    for (int i = 0; i < index1; i++) {
-        currentNode = currentNode.next;
-    }
+        LinkedDS<T> result = new LinkedDS<>();
+        Node currentNode = firstNode;
 
-    // Add nodes from index1 to index2 to the result
-    for (int i = index1; i <= index2; i++) {
-        if (currentNode != null) {
-            result.append(currentNode.data);
+        // Traverse to index1
+        for (int i = 0; i < index1; i++) {
             currentNode = currentNode.next;
         }
-    }
 
-    return result; // Return the sliced linked list
-    }
+        // Add nodes from index1 to index2 to the result
+        for (int i = index1; i <= index2; i++) {
+            if (currentNode != null) {
+                result.append(currentNode.data);
+                currentNode = currentNode.next;
+            }
+        }
 
+        return result; // Return the sliced linked list
+    }
 
     @Override
     public LinkedDS<T> slice(T entry) {
         LinkedDS<T> result = new LinkedDS<>();
         Node currentNode = firstNode;
+
         while (currentNode != null) {
             if (currentNode.data.equals(entry)) {
                 result.append(currentNode.data);
             }
             currentNode = currentNode.next;
         }
+
         return result;
     }
 
@@ -283,17 +282,36 @@ public LinkedDS<T> slice(int index1, int index2) {
     }
 
     @Override
-    public void shuffle(int[] arr1, int[] arr2) {
-        // Implement shuffle logic as required, possibly interleaving arr1 and arr2 based on the assignment requirements.
+    public void shuffle(int[] oldPositions, int[] newPositions) {
+        if (oldPositions.length != newPositions.length) {
+            throw new IllegalArgumentException("Mismatched positions array sizes.");
+        }
+
+        LinkedDS<T> tempList = new LinkedDS<>();
+        for (int i = 0; i < oldPositions.length; i++) {
+            tempList.append(itemAt(oldPositions[i]));
+        }
+
+        // Reorder the elements according to newPositions
+        Node currentNode = firstNode;
+        for (int i = 0; i < newPositions.length; i++) {
+            insert(tempList.itemAt(i), newPositions[i]);
+        }
     }
 
     @Override
     public T predecessor(T entry) {
         Node currentNode = firstNode;
         T predecessor = null;
+
         while (currentNode != null && !currentNode.data.equals(entry)) {
             predecessor = currentNode.data;
             currentNode = currentNode.next;
+        }
+
+        // If the entry is the first item, return the last item (wrap-around behavior)
+        if (currentNode == firstNode) {
+            return last();
         }
         return predecessor;
     }
@@ -337,7 +355,7 @@ public LinkedDS<T> slice(int index1, int index2) {
         if (numberOfElements >= numberOfEntries) {
             return false;
         }
-        for (int i = 0; i < numberOfEntries - numberOfElements; i++) {
+        for (int i = 0; i < numberOfElements; i++) {
             deleteTail();
         }
         return true;
@@ -375,6 +393,6 @@ public LinkedDS<T> slice(int index1, int index2) {
             sb.append(currentNode.data);
             currentNode = currentNode.next;
         }
-        return sb.toString();  // Return the concatenated string
+        return sb.toString();
     }
 }
