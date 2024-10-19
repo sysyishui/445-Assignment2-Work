@@ -1,425 +1,272 @@
-import java.util.ArrayList;
+import java.util.NoSuchElementException;
 
 public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterface<T>, ReorderInterface, Comparable<LinkedDS<T>> {
 
-    private Node firstNode;  // Reference to the first node
-    private int numberOfEntries;  // Number of elements in the list
+    private Node head; // First node in the chain
+    private Node tail; // Last node in the chain
+    private int size;  // Tracks the number of items
 
+    // Node inner class to represent each element in the linked chain
     private class Node {
-        private T data; // Entry in the sequence
-        private Node next; // Link to the next node
+        T data;
+        Node next;
 
-        private Node(T data) {
+        Node(T data) {
             this.data = data;
             this.next = null;
-        }
-
-        private Node(T data, Node nextNode) {
-            this.data = data;
-            this.next = nextNode;
         }
     }
 
     // Default constructor
     public LinkedDS() {
-        firstNode = null;
-        numberOfEntries = 0;
+        head = null;
+        tail = null;
+        size = 0;
     }
 
     // Copy constructor
     public LinkedDS(LinkedDS<T> other) {
         if (other == null || other.isEmpty()) {
-            firstNode = null;
-            numberOfEntries = 0;
+            head = null;
+            tail = null;
+            size = 0;
         } else {
-            this.firstNode = new Node(other.firstNode.data);
-            Node currentNode = this.firstNode;
-            Node otherNode = other.firstNode.next;
-
-            while (otherNode != null) {
-                currentNode.next = new Node(otherNode.data);
-                currentNode = currentNode.next;
-                otherNode = otherNode.next;
+            for (Node current = other.head; current != null; current = current.next) {
+                append(current.data);
             }
-            numberOfEntries = other.numberOfEntries;
         }
     }
 
-    // SequenceInterface methods
+    // Append an item to the end of the sequence
     @Override
-    public int size() {
-        return numberOfEntries;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return numberOfEntries == 0;
-    }
-
-    @Override
-    public T first() {
+    public void append(T item) {
+        Node newNode = new Node(item);
         if (isEmpty()) {
-            return null;
-        }
-        return firstNode.data;
-    }
-
-    @Override
-    public T last() {
-        if (isEmpty()) {
-            return null;
-        }
-
-        Node currentNode = firstNode;
-        while (currentNode.next != null) {
-            currentNode = currentNode.next;
-        }
-        return currentNode.data;
-    }
-
-    @Override
-    public T itemAt(int index) {
-        if (index < 0 || index >= numberOfEntries) {
-            throw new IndexOutOfBoundsException();
-        }
-
-        Node currentNode = firstNode;
-        for (int i = 0; i < index; i++) {
-            currentNode = currentNode.next;
-        }
-        return currentNode.data;
-    }
-
-    @Override
-    public void append(T newEntry) {
-        Node newNode = new Node(newEntry);
-
-        if (isEmpty()) {
-            firstNode = newNode;
+            head = newNode;
+            tail = newNode;
         } else {
-            Node lastNode = firstNode;
-            while (lastNode.next != null) {
-                lastNode = lastNode.next;
-            }
-            lastNode.next = newNode;
+            tail.next = newNode;
+            tail = newNode;
         }
-        numberOfEntries++;
+        size++;
     }
 
+    // Prefix an item to the beginning of the sequence
     @Override
-    public void prefix(T newEntry) {
-        Node newNode = new Node(newEntry, firstNode);
-        firstNode = newNode;
-        numberOfEntries++;
+    public void prefix(T item) {
+        Node newNode = new Node(item);
+        if (isEmpty()) {
+            head = newNode;
+            tail = newNode;
+        } else {
+            newNode.next = head;
+            head = newNode;
+        }
+        size++;
     }
 
+    // Insert an item at a specific position in the sequence
+    @Override
+    public void insert(T item, int position) {
+        if (position < 0 || position > size) throw new IndexOutOfBoundsException();
+
+        if (position == 0) {
+            prefix(item);
+            return;
+        }
+
+        if (position == size) {
+            append(item);
+            return;
+        }
+
+        Node newNode = new Node(item);
+        Node previous = null;
+        Node current = head;
+
+        for (int i = 0; i < position; i++) {
+            previous = current;
+            current = current.next;
+        }
+
+        newNode.next = current;
+        previous.next = newNode;
+        size++;
+    }
+
+    // Delete and return the head of the sequence
     @Override
     public T deleteHead() {
-        if (isEmpty()) {
-            throw new EmptySequenceException("Cannot delete from an empty sequence.");
-        }
-        T data = firstNode.data;
-        firstNode = firstNode.next;
-        numberOfEntries--;
+        if (isEmpty()) throw new EmptySequenceException("Sequence is empty");
+        T data = head.data;
+        head = head.next;
+        size--;
+        if (size == 0) tail = null;
         return data;
     }
 
+    // Delete and return the tail of the sequence
     @Override
     public T deleteTail() {
-        if (isEmpty()) {
-            throw new EmptySequenceException("Cannot delete from an empty sequence.");
-        }
-        if (numberOfEntries == 1) {
-            T data = firstNode.data;
-            firstNode = null;
-            numberOfEntries--;
+        if (isEmpty()) throw new EmptySequenceException("Sequence is empty");
+        if (size == 1) {
+            T data = head.data;
+            head = null;
+            tail = null;
+            size = 0;
             return data;
         }
-        Node currentNode = firstNode;
-        while (currentNode.next.next != null) {
-            currentNode = currentNode.next;
+
+        Node current = head;
+        while (current.next != tail) {
+            current = current.next;
         }
-        T data = currentNode.next.data;
-        currentNode.next = null;
-        numberOfEntries--;
+
+        T data = tail.data;
+        tail = current;
+        tail.next = null;
+        size--;
         return data;
     }
 
+    // Return the size of the sequence
     @Override
-    public int getFrequencyOf(T entry) {
-        int frequency = 0;
-        Node currentNode = firstNode;
-        while (currentNode != null) {
-            if (currentNode.data.equals(entry)) {
-                frequency++;
-            }
-            currentNode = currentNode.next;
-        }
-        return frequency;
+    public int size() {
+        return size;
     }
 
+    // Return whether the sequence is empty
     @Override
-    public void clear() {
-        firstNode = null;
-        numberOfEntries = 0;
+    public boolean isEmpty() {
+        return size == 0;
     }
 
+    // Return the first item in the sequence
     @Override
-    public boolean cut(int index1, int index2) {
-        if (index1 < 0 || index2 >= numberOfEntries || index1 > index2) {
-            return false;
-        }
-
-        Node currentNode = firstNode;
-        Node prevNode = null;
-
-        // Traverse to the first index
-        for (int i = 0; i < index1; i++) {
-            prevNode = currentNode;
-            currentNode = currentNode.next;
-        }
-
-        // Remove nodes from index1 to index2
-        for (int i = index1; i <= index2; i++) {
-            if (currentNode != null) {
-                currentNode = currentNode.next;
-                numberOfEntries--;
-            }
-        }
-
-        // Link previous node to the node after the cut range
-        if (prevNode != null) {
-            prevNode.next = currentNode;
-        } else {
-            firstNode = currentNode;  // If starting from the head, update the head
-        }
-
-        return true;
+    public T first() {
+        return (isEmpty()) ? null : head.data;
     }
 
+    // Return the last item in the sequence
     @Override
-    public LinkedDS<T> slice(int index1, int index2) {
-        if (index1 < 0 || index2 >= numberOfEntries || index1 > index2) {
-            throw new IndexOutOfBoundsException("Invalid indices for slicing.");
+    public T last() {
+        return (isEmpty()) ? null : tail.data;
+    }
+
+    // Return the item at a specific position in the sequence
+    @Override
+    public T itemAt(int position) {
+        if (position < 0 || position >= size) throw new IndexOutOfBoundsException();
+        Node current = head;
+        for (int i = 0; i < position; i++) {
+            current = current.next;
         }
+        return current.data;
+    }
 
-        LinkedDS<T> result = new LinkedDS<>();
-        Node currentNode = firstNode;
-
-        // Traverse to index1
-        for (int i = 0; i < index1; i++) {
-            currentNode = currentNode.next;
-        }
-
-        // Add nodes from index1 to index2 to the result
-        for (int i = index1; i <= index2; i++) {
-            if (currentNode != null) {
-                result.append(currentNode.data);
-                currentNode = currentNode.next;
+    // Return the number of occurrences of an item
+    @Override
+    public int getFrequencyOf(T item) {
+        int count = 0;
+        for (Node current = head; current != null; current = current.next) {
+            if (current.data.equals(item)) {
+                count++;
             }
         }
-
-        return result; // Return the sliced linked list
+        return count;
     }
 
+    // Return the last occurrence of an item
     @Override
-    public LinkedDS<T> slice(T entry) {
-        LinkedDS<T> result = new LinkedDS<>();
-        Node currentNode = firstNode;
-
-        while (currentNode != null) {
-            if (currentNode.data.equals(entry)) {
-                result.append(currentNode.data);
+    public int lastOccurrenceOf(T item) {
+        int lastPosition = -1;
+        int index = 0;
+        for (Node current = head; current != null; current = current.next) {
+            if (current.data.equals(item)) {
+                lastPosition = index;
             }
-            currentNode = currentNode.next;
+            index++;
         }
-
-        return result;
+        return lastPosition;
     }
 
-    @Override
-    public void rotateRight() {
-        if (numberOfEntries <= 1) return;
-
-        Node lastNode = firstNode;
-        Node secondLastNode = null;
-        while (lastNode.next != null) {
-            secondLastNode = lastNode;
-            lastNode = lastNode.next;
-        }
-
-        lastNode.next = firstNode;
-        firstNode = lastNode;
-        secondLastNode.next = null;
-    }
-
-    @Override
-    public void rotateLeft() {
-        if (numberOfEntries <= 1) return;
-
-        Node oldHead = firstNode;
-        Node lastNode = firstNode;
-        while (lastNode.next != null) {
-            lastNode = lastNode.next;
-        }
-        firstNode = oldHead.next;
-        oldHead.next = null;
-        lastNode.next = oldHead;
-    }
-
+    // Reverse the sequence
     @Override
     public void reverse() {
         if (isEmpty()) return;
 
         Node prev = null;
-        Node current = firstNode;
-        Node next;
+        Node current = head;
+        tail = head;
+
         while (current != null) {
-            next = current.next;
+            Node nextNode = current.next;
             current.next = prev;
             prev = current;
-            current = next;
+            current = nextNode;
         }
-        firstNode = prev;
+        head = prev;
     }
 
+    // Rotate the sequence to the right
     @Override
-public void shuffle(int[] oldPositions, int[] newPositions) {
-    if (oldPositions.length != newPositions.length) {
-        throw new IllegalArgumentException("Mismatched positions array sizes.");
+    public void rotateRight() {
+        if (size <= 1) return;
+
+        Node current = head;
+        while (current.next != tail) {
+            current = current.next;
+        }
+
+        current.next = null;
+        tail.next = head;
+        head = tail;
+        tail = current;
     }
 
-    LinkedDS<T> tempList = new LinkedDS<>();
-    for (int i = 0; i < oldPositions.length; i++) {
-        tempList.append(itemAt(oldPositions[i]));
-    }
-
-    // Use ArrayList instead of an array
-    ArrayList<Node> tempNodes = new ArrayList<>(numberOfEntries);
-    Node currentNode = firstNode;
-    
-    // Populate the ArrayList with nodes
-    for (int i = 0; i < numberOfEntries; i++) {
-        tempNodes.add(currentNode);
-        currentNode = currentNode.next;
-    }
-
-    // Reorder the elements according to newPositions
-    for (int i = 0; i < newPositions.length; i++) {
-        tempNodes.get(newPositions[i]).data = tempList.itemAt(i);
-    }
-
-    // Restore the reordered list
-    firstNode = tempNodes.get(0);
-    Node lastNode = firstNode;
-    for (int i = 1; i < tempNodes.size(); i++) {
-        lastNode.next = tempNodes.get(i);
-        lastNode = lastNode.next;
-    }
-    lastNode.next = null;
-}
-
-
+    // Rotate the sequence to the left
     @Override
-    public T predecessor(T entry) {
-        if (isEmpty()) {
-            return null;
-        }
+    public void rotateLeft() {
+        if (size <= 1) return;
 
-        Node currentNode = firstNode;
-        Node prevNode = null;
-
-        while (currentNode != null) {
-            if (currentNode.data.equals(entry)) {
-                if (prevNode == null) {
-                    return last(); // Wrap around if the first node is the entry
-                } else {
-                    return prevNode.data; // Return the predecessor
-                }
-            }
-            prevNode = currentNode;
-            currentNode = currentNode.next;
-        }
-        return null; // If entry is not found
+        tail.next = head;
+        head = head.next;
+        tail = tail.next;
+        tail.next = null;
     }
 
-    @Override
-    public void insert(T entry, int index) {
-        if (index < 0 || index > numberOfEntries) {
-            throw new IndexOutOfBoundsException();
-        }
-
-        if (index == 0) {
-            prefix(entry);
-        } else {
-            Node currentNode = firstNode;
-            for (int i = 0; i < index - 1; i++) {
-                currentNode = currentNode.next;
-            }
-            Node newNode = new Node(entry, currentNode.next);
-            currentNode.next = newNode;
-            numberOfEntries++;
-        }
-    }
-
-    @Override
-    public int lastOccurrenceOf(T entry) {
-        int lastOccurrence = -1;
-        Node currentNode = firstNode;
-        int index = 0;
-        while (currentNode != null) {
-            if (currentNode.data.equals(entry)) {
-                lastOccurrence = index;
-            }
-            index++;
-            currentNode = currentNode.next;
-        }
-        return lastOccurrence;
-    }
-
-    @Override
-    public boolean trim(int numberOfElements) {
-        if (numberOfElements >= numberOfEntries) {
-            return false;
-        }
-        for (int i = 0; i < numberOfElements; i++) {
-            deleteTail();
-        }
-        return true;
-    }
-
-    // Comparable Interface method
+    // Compare two LinkedDS objects lexicographically
     @Override
     public int compareTo(LinkedDS<T> other) {
-        Node thisNode = this.firstNode;
-        Node otherNode = other.firstNode;
+        Node currentThis = head;
+        Node currentOther = other.head;
 
-        while (thisNode != null && otherNode != null) {
-            int comparison = thisNode.data.compareTo(otherNode.data);
-            if (comparison != 0) {
-                return comparison;
-            }
-            thisNode = thisNode.next;
-            otherNode = otherNode.next;
+        while (currentThis != null && currentOther != null) {
+            int comparison = currentThis.data.compareTo(currentOther.data);
+            if (comparison != 0) return comparison;
+
+            currentThis = currentThis.next;
+            currentOther = currentOther.next;
         }
 
-        if (thisNode == null && otherNode == null) {
-            return 0;  // Equal
-        } else if (thisNode == null) {
-            return -1; // This is smaller
-        } else {
-            return 1;  // This is larger
-        }
+        return Integer.compare(size, other.size());
     }
 
+    // Convert the sequence to a string (no spaces)
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        Node currentNode = firstNode;
-        while (currentNode != null) {
-            sb.append(currentNode.data);
-            currentNode = currentNode.next;
+        for (Node current = head; current != null; current = current.next) {
+            sb.append(current.data);
         }
         return sb.toString();
+    }
+
+    // Clear the sequence
+    @Override
+    public void clear() {
+        head = null;
+        tail = null;
+        size = 0;
     }
 }
