@@ -274,31 +274,45 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
 
     // Find the predecessor of an item in the sequence
     public T predecessor(T item) {
-        if (head == null || head.data.equals(item)) return null;
+        if (head == null || head.data.equals(item)) {
+            return null; // No predecessor if the item is at the head or if the list is empty
+        }
 
-        Node prev = null;
+        Node prev = null;  // This will store the predecessor node
         Node current = head;
+        T lastPredecessor = null; // Track the last predecessor found
 
+        // Traverse the list to find the target item
         while (current != null) {
-            if (current.data.equals(item)) return prev.data;
+            if (current.data.equals(item)) {
+                lastPredecessor = (prev != null) ? prev.data : null; // Update last predecessor found
+            }
             prev = current;
             current = current.next;
         }
 
-        return null;
+        return lastPredecessor; // Return the last found predecessor
     }
 
     // Trim the sequence to a specific size
     public boolean trim(int newSize) {
-        if (newSize >= size) return false;
+        if (newSize >= size) {
+            return false; // No trimming needed if newSize is greater than or equal to current size
+        }
 
+        // Find the node at the newSize position and update the tail
         Node current = head;
         for (int i = 0; i < newSize - 1; i++) {
             current = current.next;
         }
+
+        // Update the tail and set the next node to null
         current.next = null;
         tail = current;
+
+        // Update the size of the sequence
         size = newSize;
+
         return true;
     }
 
@@ -358,17 +372,41 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
         tail.next = null;
     }
 
-    // Slice a portion of the sequence
+    // Slice a portion of the sequence based on item (including the item)
+    @Override
+    public SequenceInterface<T> slice(T item) {
+        // Assuming slice(T item) slices from the first occurrence of item to the end
+        Node current = head;
+        int index = 0;
+
+        // Find the first occurrence of the item
+        while (current != null && !current.data.equals(item)) {
+            current = current.next;
+            index++;
+        }
+
+        if (current == null) {
+            throw new NoSuchElementException("Item not found in sequence");
+        }
+
+        // Start the slice from the item found
+        return slice(index);
+    }
+
+    // Slice a portion of the sequence from start to end (inclusive of start, exclusive of end)
+    @Override
     public SequenceInterface<T> slice(int start, int end) {
         if (start < 0 || end > size || start >= end) throw new IndexOutOfBoundsException();
 
         LinkedDS<T> newSeq = new LinkedDS<>();
         Node current = head;
 
+        // Move to the starting position
         for (int i = 0; i < start; i++) {
             current = current.next;
         }
 
+        // Add items from start to end (exclusive of end)
         for (int i = start; i < end; i++) {
             newSeq.append(current.data);
             current = current.next;
@@ -379,20 +417,5 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
 
     public SequenceInterface<T> slice(int start) {
         return slice(start, size);
-    }
-
-    @Override
-    public SequenceInterface<T> slice(T item) {
-        // Assuming slice(T item) slices from the first occurrence of item to the end
-        Node current = head;
-        int index = 0;
-        while (current != null && !current.data.equals(item)) {
-            current = current.next;
-            index++;
-        }
-
-        if (current == null) throw new NoSuchElementException("Item not found in sequence");
-
-        return slice(index);
     }
 }
