@@ -300,13 +300,13 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
             return false; // No trimming needed if newSize is greater than or equal to current size
         }
 
-        // Find the node at the newSize position and update the tail
         Node current = head;
+        // Traverse to the new tail node at position (newSize - 1)
         for (int i = 0; i < newSize - 1; i++) {
             current = current.next;
         }
 
-        // Update the tail and set the next node to null
+        // Set the next node of the new tail to null and update the tail
         current.next = null;
         tail = current;
 
@@ -375,7 +375,6 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
     // Slice a portion of the sequence based on item (including the item)
     @Override
     public SequenceInterface<T> slice(T item) {
-        // Assuming slice(T item) slices from the first occurrence of item to the end
         Node current = head;
         int index = 0;
 
@@ -389,7 +388,7 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
             throw new NoSuchElementException("Item not found in sequence");
         }
 
-        // Start the slice from the item found
+        // Return the slice starting from the item found
         return slice(index);
     }
 
