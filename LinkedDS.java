@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterface<T>, ReorderInterface, Comparable<LinkedDS<T>> {
@@ -334,21 +336,24 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
     public void shuffle(int[] oldPos, int[] newPos) {
         if (oldPos.length != newPos.length || oldPos.length != size) return;
 
-        @SuppressWarnings("unchecked")
-        Node[] nodes = (Node[]) new Node[size]; // Create an array of Node references
+        List<Node> nodes = new ArrayList<>(); // Use ArrayList to store the nodes
         Node current = head;
+
+        // Populate the list with nodes
         for (int i = 0; i < size; i++) {
-            nodes[oldPos[i]] = current;
+            nodes.add(current);
             current = current.next;
         }
 
-        head = nodes[newPos[0]];
+        // Reassign head and adjust node positions based on newPos
+        head = nodes.get(newPos[0]);
         current = head;
         for (int i = 1; i < size; i++) {
-            current.next = nodes[newPos[i]];
+            current.next = nodes.get(newPos[i]);
             current = current.next;
         }
 
+        // Update the tail and set the last node's next to null
         tail = current;
         tail.next = null;
     }
