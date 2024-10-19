@@ -269,4 +269,125 @@ public class LinkedDS<T extends Comparable<? super T>> implements SequenceInterf
         tail = null;
         size = 0;
     }
+
+    // Find the predecessor of an item in the sequence
+    public T predecessor(T item) {
+        if (head == null || head.data.equals(item)) return null;
+
+        Node prev = null;
+        Node current = head;
+
+        while (current != null) {
+            if (current.data.equals(item)) return prev.data;
+            prev = current;
+            current = current.next;
+        }
+
+        return null;
+    }
+
+    // Trim the sequence to a specific size
+    public boolean trim(int newSize) {
+        if (newSize >= size) return false;
+
+        Node current = head;
+        for (int i = 0; i < newSize - 1; i++) {
+            current = current.next;
+        }
+        current.next = null;
+        tail = current;
+        size = newSize;
+        return true;
+    }
+
+    // Cut a part of the sequence
+    public boolean cut(int start, int length) {
+        if (start < 0 || length <= 0 || start + length > size) return false;
+
+        if (start == 0) {
+            for (int i = 0; i < length; i++) {
+                deleteHead();
+            }
+            return true;
+        }
+
+        Node current = head;
+        for (int i = 0; i < start - 1; i++) {
+            current = current.next;
+        }
+
+        Node cutStart = current;
+        for (int i = 0; i < length; i++) {
+            cutStart = cutStart.next;
+        }
+
+        current.next = cutStart.next;
+        if (cutStart == tail) {
+            tail = current;
+        }
+
+        size -= length;
+        return true;
+    }
+
+    // Shuffle the sequence based on two position arrays
+    public void shuffle(int[] oldPos, int[] newPos) {
+        if (oldPos.length != newPos.length || oldPos.length != size) return;
+
+        @SuppressWarnings("unchecked")
+        Node[] nodes = (Node[]) new Node[size]; // Create an array of Node references
+        Node current = head;
+        for (int i = 0; i < size; i++) {
+            nodes[oldPos[i]] = current;
+            current = current.next;
+        }
+
+        head = nodes[newPos[0]];
+        current = head;
+        for (int i = 1; i < size; i++) {
+            current.next = nodes[newPos[i]];
+            current = current.next;
+        }
+
+        tail = current;
+        tail.next = null;
+    }
+
+    // Slice a portion of the sequence
+    public SequenceInterface<T> slice(int start, int end) {
+        if (start < 0 || end > size || start >= end) throw new IndexOutOfBoundsException();
+
+        LinkedDS<T> newSeq = new LinkedDS<>();
+        Node current = head;
+
+        for (int i = 0; i < start; i++) {
+            current = current.next;
+        }
+
+        for (int i = start; i < end; i++) {
+            newSeq.append(current.data);
+            current = current.next;
+        }
+
+        return newSeq;
+    }
+
+    public SequenceInterface<T> slice(int start) {
+        return slice(start, size);
+    }
+
+    @Override
+    public SequenceInterface<T> slice(T item) {
+        // Assuming slice(T item) slices from the first occurrence of item to the end
+        Node current = head;
+        int index = 0;
+        while (current != null && !current.data.equals(item)) {
+            current = current.next;
+            index++;
+        }
+
+        if (current == null) throw new NoSuchElementException("Item not found in sequence");
+
+        return slice(index);
+    }
 }
